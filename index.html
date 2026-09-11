@@ -186,9 +186,19 @@
             console.log(new Date().toISOString(), position.coords, isWithinRadius(existingCoordinates.home.lat, existingCoordinates.home.lng, coords.lat, coords.lng, 12));
             const isHemma = isWithinRadius(existingCoordinates.home.lat, existingCoordinates.home.lng, coords.lat, coords.lng, 12);
             statusDiv.innerText = isHemma ? "Hemma" : "Inte hemma";
-            saveBtn.setAttribute('disabled', !isHemma);
+            
             saveBtn.innerText = isHemma ? "Spara position" : "Kan inte spara";
-            saveBtn.classList.toggle('disabled', isHemma);
+            
+            if (!isHemma) {
+             
+                saveBtn.classList.remove('disabled');
+                saveBtn.removeAttribute('disabled');
+                
+            } else {
+                saveBtn.classList.add('disabled');
+                saveBtn.setAttribute('disabled', 'true');
+            }
+
             // const coords = {
             //     lat: 59.339342,
             //     lng: 18.050385
