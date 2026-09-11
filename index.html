@@ -50,7 +50,7 @@
             transition: background-color 0.2s;
         }
 
-        .button-save-disabled {
+        .disabled {
             background-color: #a7aba5a0;
             color: white;
             border: none;
@@ -104,7 +104,7 @@
 <body>
     <h1>iPark</h1>
     <div class="button-container">
-        <button id="saveBtn" class="button-save-disabled" disabled> Spara min nuvarande position</button>
+        <button id="saveBtn" class="button-save disabled" disabled>Kan inte spara</button>
         <button id="showBtn">
             Visa sparad position på karta</button>
     </div>
@@ -184,7 +184,11 @@
                 lng: position.coords.longitude
             };
             console.log(new Date().toISOString(), position.coords, isWithinRadius(existingCoordinates.home.lat, existingCoordinates.home.lng, coords.lat, coords.lng, 12));
-            statusDiv.innerText = isWithinRadius(existingCoordinates.home.lat, existingCoordinates.home.lng, coords.lat, coords.lng, 12) ? "Hemma" : "Inte hemma";
+            const isHemma = isWithinRadius(existingCoordinates.home.lat, existingCoordinates.home.lng, coords.lat, coords.lng, 12);
+            statusDiv.innerText = isHemma ? "Hemma" : "Inte hemma";
+            saveBtn.setAttribute('disabled', !isHemma);
+            saveBtn.innerText = isHemma ? "Spara position" : "Kan inte spara";
+            saveBtn.classList.toggle('disabled', !isHemma);
             // const coords = {
             //     lat: 59.339342,
             //     lng: 18.050385
