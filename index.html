@@ -188,7 +188,7 @@
             statusDiv.innerText = isHemma ? "Hemma" : "Inte hemma";
             saveBtn.setAttribute('disabled', !isHemma);
             saveBtn.innerText = isHemma ? "Spara position" : "Kan inte spara";
-            saveBtn.classList.toggle('disabled', !isHemma);
+            saveBtn.classList.toggle('disabled', isHemma);
             // const coords = {
             //     lat: 59.339342,
             //     lng: 18.050385
