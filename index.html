@@ -82,17 +82,57 @@
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
         integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
 
-    <script>
+    
+
+    <script type="module">
+        async function getData() {
+            let data = await fetch('https://api.jsonbin.io/v3/b/6aa29a19ac6210605abc6740', {
+                headers: {
+                    'X-Access-Key': '$2a$10$8UPcW0fUtrFm84CBrZUDw.SEcB6w/vgpisWxb0c6vIXX34c2BbScy'
+                }
+            })
+            try {
+                data = await data.json();
+                return data.record;
+            } catch (error) {
+                console.error('Error loading mock data:', error);
+            }
+            return data;
+        }
+
+        async function updateData(newData) {
+            let data = await fetch('https://api.jsonbin.io/v3/b/6aa29a19ac6210605abc6740', {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Access-Key': '$2a$10$8UPcW0fUtrFm84CBrZUDw.SEcB6w/vgpisWxb0c6vIXX34c2BbScy'
+                },
+                body: JSON.stringify(newData)
+            });
+            try {
+                data = await data.json();
+                return data.record;
+            } catch (error) {
+                console.error('Error loading mock data:', error);
+            }
+            return data;
+        }
+
+        const existingCoordinates = await getData();
 
         const saveBtn = document.getElementById('saveBtn');
         const showBtn = document.getElementById('showBtn');
         const statusDiv = document.getElementById('status');
         const mapDiv = document.getElementById('map');
-        let map = null; 
+
+        let map = null;
         let marker = null;
         let coordinates = [];
+
+
+        console.log(new Date().toISOString(), existingCoordinates);
         // KNAPP 1: Spara position 
-        saveBtn.addEventListener('click', () => {
+        saveBtn.addEventListener('click', async () => {
             if (!navigator.geolocation) {
                 statusDiv.innerText = "Tyvärr stödjer inte din webbläsare GPS.";
                 return;
@@ -100,14 +140,20 @@
             statusDiv.innerText = "Hämtar position...";
 
             //for (let index = 0; index < 10; index++) {
-            navigator.geolocation.getCurrentPosition((position) => {
+            navigator.geolocation.getCurrentPosition(async (position) => {
                 const coords = {
                     lat: position.coords.latitude,
                     lng: position.coords.longitude
                 };
+                console.log(new Date().toISOString(), position.coords.accuracy);
+                // const coords = {
+                //     lat: 59.339342,
+                //     lng: 18.050385
+                // };
                 //coordinates.push(coords);
                 //console.log(new Date().toLocaleTimeString(), coords);
                 localStorage.setItem('savedLocation', JSON.stringify(coords));
+                await updateData({ home: {"lat": 59.339342, "lng": 18.050385}, car: coords, time: new Date().toISOString() });
                 statusDiv.innerText = `Sparat! Lat: ${coords.lat.toFixed(4)}, Lng: ${coords.lng.toFixed(4)}`;
             }, (error) => {
                 statusDiv.innerText = "Kunde inte hämta plats. Godkände du GPS-tillgång?";
@@ -127,28 +173,35 @@
 
         // KNAPP 2: Visa sparad position på karta 
         showBtn.addEventListener('click', () => {
-            const savedData = localStorage.getItem('savedLocation');
-            if (!savedData) {
+            //const savedData = localStorage.getItem('savedLocation');
+            if (!existingCoordinates) {
                 statusDiv.innerText = "Det finns ingen sparad plats att visa!";
                 return;
             }
-            const coords = JSON.parse(savedData);
-            statusDiv.innerText = `Visar sparad plats: ${coords.lat.toFixed(4)}, ${coords.lng.toFixed(4)}`;
+            const homeCoords = existingCoordinates.home;
+            const carCoords = existingCoordinates.car;
+            statusDiv.innerText = `Visar sparad plats: ${carCoords.lat.toFixed(4)}, ${carCoords.lng.toFixed(4)}`;
             // Gör kartan synlig 
             mapDiv.style.display = "block";
 
             // Skapa eller uppdatera kartan 
             if (map === null) {
                 // Starta kartan och zooma in på koordinaterna 
-                map = L.map('map').setView([coords.lat, coords.lng], 15);
+                map = L.map('map').setView([carCoords.lat, carCoords.lng], 15);
+
+                
                 // Ladda in kartbilder från OpenStreetMap 
                 L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', { attribution: '© OpenStreetMap' }).addTo(map);
                 // Sätt ut en nål (marker) 
-                marker = L.marker([coords.lat, coords.lng]).addTo(map);
+                marker = L.marker([homeCoords.lat, homeCoords.lng]).addTo(map);
+                L.circle([homeCoords.lat, homeCoords.lng], { radius: 12 }).addTo(map);
+
+                marker = L.marker([carCoords.lat, carCoords.lng]).addTo(map);
+                L.circle([carCoords.lat, carCoords.lng], { radius: 20, color: 'red' }).addTo(map);
             } else {
                 // Om kartan redan finns, flytta den bara till den nya platsen 
-                map.setView([coords.lat, coords.lng], 15);
-                marker.setLatLng([coords.lat, coords.lng]);
+                map.setView([carCoords.lat, carCoords.lng], 15);
+                marker.setLatLng([carCoords.lat, carCoords.lng]);
             }
             // Fixar en bugg i Leaflet där kartan ibland inte ritas ut rätt när den varit dold 
             setTimeout(() => { map.invalidateSize(); }, 200);
